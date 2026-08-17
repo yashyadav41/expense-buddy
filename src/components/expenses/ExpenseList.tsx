@@ -1,5 +1,11 @@
 import { useMemo, useState } from "react";
-import { CATEGORIES, CATEGORY_META, type Category, type Expense } from "@/lib/expense-data";
+import { CATEGORIES, CATEGORY_META, type Expense } from "@/lib/expense-data";
+import { ExpenseControls } from "./ExpenseControls";
+import {
+  filterAndSortExpenses,
+  type CategoryFilter,
+  type ExpenseFilters,
+} from "@/lib/expense-filters";
 
 function formatINR(n: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -24,53 +30,61 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-type Filter = Category | "All";
-
 export function ExpenseList({ expenses, onEdit, onDelete }: Props) {
-  const [filter, setFilter] = useState<Filter>("All");
+  const [filters, setFilters] = useState<ExpenseFilters>({
+    search: "",
+    category: "All",
+    date: "all",
+    sort: "newest",
+  });
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
-  const filtered = useMemo(() => {
-    const list =
-      filter === "All"
-        ? expenses
-        : expenses.filter((e) => e.category === filter);
-    return [...list].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
-  }, [expenses, filter]);
+  const patch = (p: Partial<ExpenseFilters>) =>
+    setFilters((prev) => ({ ...prev, ...p }));
+
+  const filtered = useMemo(
+    () => filterAndSortExpenses(expenses, filters),
+    [expenses, filters],
+  );
 
   return (
     <div className="rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="font-display text-lg font-semibold text-foreground">
-            All Expenses
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {filtered.length} {filtered.length === 1 ? "entry" : "entries"}
-          </p>
+      <div className="flex flex-col gap-4 border-b border-border p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-display text-lg font-semibold text-foreground">
+              All Expenses
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {filtered.length} {filtered.length === 1 ? "entry" : "entries"}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {(["All", ...CATEGORIES] as CategoryFilter[]).map((c) => (
+              <button
+                key={c}
+                onClick={() => patch({ category: c })}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  filters.category === c
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {(["All", ...CATEGORIES] as Filter[]).map((c) => (
-            <button
-              key={c}
-              onClick={() => setFilter(c)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                filter === c
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+
+        <ExpenseControls filters={filters} onChange={patch} />
       </div>
 
       {filtered.length === 0 ? (
         <p className="py-12 text-center text-sm text-muted-foreground">
-          No expenses found. Try a different filter or add a new one.
+          No expenses found.
         </p>
       ) : (
+
         <>
           {/* Desktop table */}
           <div className="hidden overflow-x-auto sm:block">
