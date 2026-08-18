@@ -48,39 +48,83 @@ function dateOffset(daysAgo: number): string {
   return `${y}-${m}-${day}`;
 }
 
-const SAMPLE_EXPENSES: Expense[] = [
-  { id: "s1", amount: 420, category: "Food", date: dateOffset(0), description: "Grocery run at Fresh Market", createdAt: Date.now() - 1000 },
-  { id: "s2", amount: 35, category: "Food", date: dateOffset(0), description: "Lunch with team", createdAt: Date.now() - 2000 },
-  { id: "s3", amount: 1800, category: "Travel", date: dateOffset(1), description: "Flight tickets to Bangalore", createdAt: Date.now() - 3000 },
-  { id: "s4", amount: 250, category: "Travel", date: dateOffset(2), description: "Cab to airport", createdAt: Date.now() - 4000 },
-  { id: "s5", amount: 1299, category: "Shopping", date: dateOffset(3), description: "Wireless headphones", createdAt: Date.now() - 5000 },
-  { id: "s6", amount: 899, category: "Shopping", date: dateOffset(4), description: "Winter jacket", createdAt: Date.now() - 6000 },
-  { id: "s7", amount: 1450, category: "Bills", date: dateOffset(5), description: "Electricity bill", createdAt: Date.now() - 7000 },
-  { id: "s8", amount: 699, category: "Bills", date: dateOffset(6), description: "Internet & mobile recharge", createdAt: Date.now() - 8000 },
-  { id: "s9", amount: 320, category: "Entertainment", date: dateOffset(6), description: "Movie night with friends", createdAt: Date.now() - 9000 },
-  { id: "s10", amount: 540, category: "Food", date: dateOffset(7), description: "Dinner at Olive Bistro", createdAt: Date.now() - 10000 },
-  { id: "s11", amount: 2100, category: "Bills", date: dateOffset(8), description: "Monthly rent share", createdAt: Date.now() - 11000 },
-  { id: "s12", amount: 120, category: "Other", date: dateOffset(9), description: "Stationery supplies", createdAt: Date.now() - 12000 },
-  { id: "s13", amount: 780, category: "Entertainment", date: dateOffset(11), description: "Concert tickets", createdAt: Date.now() - 13000 },
-  { id: "s14", amount: 460, category: "Travel", date: dateOffset(13), description: "Weekend cab trips", createdAt: Date.now() - 14000 },
-  { id: "s15", amount: 320, category: "Shopping", date: dateOffset(15), description: "Books from local store", createdAt: Date.now() - 15000 },
-  { id: "s16", amount: 950, category: "Food", date: dateOffset(18), description: "Birthday dinner", createdAt: Date.now() - 16000 },
+/** Sample rows defined as day-offsets so they stay relative to "today". */
+const SAMPLE_SEED: {
+  id: string;
+  amount: number;
+  category: Category;
+  daysAgo: number;
+  description: string;
+}[] = [
+  { id: "s1", amount: 420, category: "Food", daysAgo: 0, description: "Grocery run at Fresh Market" },
+  { id: "s2", amount: 35, category: "Food", daysAgo: 0, description: "Lunch with team" },
+  { id: "s3", amount: 1800, category: "Travel", daysAgo: 1, description: "Flight tickets to Bangalore" },
+  { id: "s4", amount: 250, category: "Travel", daysAgo: 2, description: "Cab to airport" },
+  { id: "s5", amount: 1299, category: "Shopping", daysAgo: 3, description: "Wireless headphones" },
+  { id: "s6", amount: 899, category: "Shopping", daysAgo: 4, description: "Winter jacket" },
+  { id: "s7", amount: 1450, category: "Bills", daysAgo: 5, description: "Electricity bill" },
+  { id: "s8", amount: 699, category: "Bills", daysAgo: 6, description: "Internet & mobile recharge" },
+  { id: "s9", amount: 320, category: "Entertainment", daysAgo: 6, description: "Movie night with friends" },
+  { id: "s10", amount: 540, category: "Food", daysAgo: 7, description: "Dinner at Olive Bistro" },
+  { id: "s11", amount: 2100, category: "Bills", daysAgo: 8, description: "Monthly rent share" },
+  { id: "s12", amount: 120, category: "Other", daysAgo: 9, description: "Stationery supplies" },
+  { id: "s13", amount: 780, category: "Entertainment", daysAgo: 11, description: "Concert tickets" },
+  { id: "s14", amount: 460, category: "Travel", daysAgo: 13, description: "Weekend cab trips" },
+  { id: "s15", amount: 320, category: "Shopping", daysAgo: 15, description: "Books from local store" },
+  { id: "s16", amount: 950, category: "Food", daysAgo: 18, description: "Birthday dinner" },
 ];
+
+function buildSampleExpenses(): Expense[] {
+  const now = Date.now();
+  return SAMPLE_SEED.map((s, i) => ({
+    id: s.id,
+    amount: s.amount,
+    category: s.category,
+    date: dateOffset(s.daysAgo),
+    description: s.description,
+    createdAt: now - (i + 1) * 1000,
+  }));
+}
+
+const SAMPLE_EXPENSES: Expense[] = buildSampleExpenses();
+
+const isSampleId = (id: string) => /^s\d+$/.test(id);
 
 export function loadExpenses(): Expense[] {
   if (typeof window === "undefined") return SAMPLE_EXPENSES;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(SAMPLE_EXPENSES));
-      return SAMPLE_EXPENSES;
+      const seeded = buildSampleExpenses();
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+      return seeded;
     }
     const parsed = JSON.parse(raw) as Expense[];
-    return Array.isArray(parsed) ? parsed : SAMPLE_EXPENSES;
+    if (!Array.isArray(parsed)) return buildSampleExpenses();
+
+    // Untouched demo data was generated on an earlier day, so its dates drift
+    // out of "today"/"this week". Refresh sample rows relative to today while
+    // leaving any user-created expenses exactly as they are.
+    const fresh = buildSampleExpenses();
+    const byId = new Map(fresh.map((e) => [e.id, e]));
+    const refreshed = parsed.map((e) => {
+      const s = byId.get(e.id);
+      if (!s || !isSampleId(e.id)) return e;
+      const untouched =
+        e.amount === s.amount &&
+        e.category === s.category &&
+        e.description === s.description;
+      return untouched ? { ...e, date: s.date } : e;
+    });
+    if (JSON.stringify(refreshed) !== JSON.stringify(parsed)) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(refreshed));
+    }
+    return refreshed;
   } catch {
-    return SAMPLE_EXPENSES;
+    return buildSampleExpenses();
   }
 }
+
 
 export function saveExpenses(expenses: Expense[]): void {
   if (typeof window === "undefined") return;
