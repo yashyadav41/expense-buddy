@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CATEGORIES, type Category } from "@/lib/expense-data";
 import type { NewExpense } from "@/hooks/use-expenses";
+import { toLocalISODate } from "@/lib/expense-filters";
 
 interface Props {
   onSubmit: (data: NewExpense) => void;
@@ -10,7 +11,7 @@ interface Props {
 }
 
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalISODate(new Date());
 }
 
 export function ExpenseForm({

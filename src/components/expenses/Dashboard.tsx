@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Expense } from "@/lib/expense-data";
 import { CATEGORY_META } from "@/lib/expense-data";
+import { toLocalISODate } from "@/lib/expense-filters";
 
 function formatINR(n: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -25,7 +26,7 @@ interface Props {
 
 export function Dashboard({ expenses }: Props) {
   const stats = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toLocalISODate(new Date());
     const now = new Date();
     const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
