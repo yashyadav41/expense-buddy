@@ -5,6 +5,8 @@ import { Dashboard } from "@/components/expenses/Dashboard";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { ExpenseList } from "@/components/expenses/ExpenseList";
 import { CategorySummary } from "@/components/expenses/CategorySummary";
+import { BudgetCard } from "@/components/expenses/BudgetCard";
+import { useBudget } from "@/hooks/use-budget";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -159,6 +161,11 @@ function Index() {
 
         {tab === "dashboard" && (
           <div className="space-y-6">
+            <BudgetCard
+              expenses={expenses}
+              budget={budget}
+              onSetBudget={setBudget}
+            />
             <Dashboard expenses={expenses} />
           </div>
         )}
