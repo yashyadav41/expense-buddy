@@ -33,6 +33,7 @@ export const Route = createFileRoute("/")({
 type Tab = "dashboard" | "expenses" | "summary";
 
 function Index() {
+  const { budget, setBudget } = useBudget();
   const {
     expenses,
     hydrated,
