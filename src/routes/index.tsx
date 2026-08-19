@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useExpenses, type NewExpense, type Expense } from "@/hooks/use-expenses";
 import { Dashboard } from "@/components/expenses/Dashboard";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
@@ -11,13 +11,13 @@ import { useBudget } from "@/hooks/use-budget";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Ledger — Expense Tracker" },
+      { title: "Expense Buddy — Personal Finance Tracker" },
       {
         name: "description",
         content:
           "A clean, modern expense tracker. Track spending, manage categories, and visualize where your money goes.",
       },
-      { property: "og:title", content: "Ledger — Expense Tracker" },
+      { property: "og:title", content: "Expense Buddy — Personal Finance Tracker" },
       {
         property: "og:description",
         content:
@@ -33,7 +33,6 @@ export const Route = createFileRoute("/")({
 type Tab = "dashboard" | "expenses" | "summary";
 
 function Index() {
-  const { budget, setBudget } = useBudget();
   const {
     expenses,
     hydrated,
@@ -42,6 +41,8 @@ function Index() {
     deleteExpense,
     resetSampleData,
   } = useExpenses();
+
+  const { budget, setBudget } = useBudget();
 
   const [tab, setTab] = useState<Tab>("dashboard");
   const [editing, setEditing] = useState<{ id: string; data: NewExpense } | null>(null);
@@ -76,10 +77,38 @@ function Index() {
     );
   }
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "dashboard", label: "Dashboard" },
-    { id: "expenses", label: "Expenses" },
-    { id: "summary", label: "Summary" },
+  const tabs: { id: Tab; label: string; icon: ReactNode }[] = [
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="9" rx="1.5" />
+          <rect x="14" y="3" width="7" height="5" rx="1.5" />
+          <rect x="14" y="12" width="7" height="9" rx="1.5" />
+          <rect x="3" y="16" width="7" height="5" rx="1.5" />
+        </svg>
+      ),
+    },
+    {
+      id: "expenses",
+      label: "Expenses",
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 6h16M4 12h16M4 18h10" />
+        </svg>
+      ),
+    },
+    {
+      id: "summary",
+      label: "Summary",
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 3v18h18" />
+          <path d="M7 15l4-5 3 3 5-7" />
+        </svg>
+      ),
+    },
   ];
 
   return (
@@ -88,7 +117,7 @@ function Index() {
       <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 3v18h18" />
                 <path d="M7 14l3-3 3 3 5-5" />
@@ -96,9 +125,9 @@ function Index() {
             </div>
             <div>
               <h1 className="font-display text-lg font-bold leading-none text-foreground">
-                Ledger
+                Expense Buddy
               </h1>
-              <p className="text-xs text-muted-foreground">Expense Tracker</p>
+              <p className="text-xs text-muted-foreground">Personal Finance Tracker</p>
             </div>
           </div>
 
@@ -134,12 +163,14 @@ function Index() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              aria-current={tab === t.id ? "page" : undefined}
+              className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 tab === t.id
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               }`}
             >
+              {t.icon}
               {t.label}
             </button>
           ))}
@@ -221,7 +252,7 @@ function Index() {
 
       <footer className="border-t border-border py-6">
         <p className="mx-auto max-w-6xl px-4 text-center text-xs text-muted-foreground sm:px-6">
-          Ledger · A clean expense tracker demo · Data saved locally in your browser
+          Expense Buddy · A clean expense tracker demo · Data saved locally in your browser
         </p>
       </footer>
     </div>
